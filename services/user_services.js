@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs')
 const userDao = require('../models/user_dao')
 const jwt = require('jsonwebtoken')
+const SECRET_KEY = process.env.SECRETKEY
 
 const signUp = async (email, nickName, password, checkPassword) => {
 
@@ -60,4 +61,47 @@ const checkDupMail = async (email) => {
   }
 };
 
-module.exports = { signUp, checkDupMail }
+const logIn = async (email, password) => {
+
+  const REQUIRED_KEYS = { email, password };
+  Object.keys(REQUIRED_KEYS).map((key) => {
+    if (!REQUIRED_KEYS[key]) {
+      const error = new Error(`${key}를 입력하세요`);
+      error.statusCode = 400;
+      throw error;
+    }
+  });
+
+  const emailFormCheck =
+    /^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*.[a-zA-Z]{2,3}$/i;
+  if (emailFormCheck.test(email) == false) {
+    const error = new Error('이메일 형식이 올바르지 않습니다.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const loginInfo = await userDao.getEmailPassword(email)
+
+  if (!loginInfo) {
+    const error = new Error('존재하지 않는 이메일입니다.')
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const isPasswordCorrect = bcrypt.compareSync(password, loginInfo.password)
+
+  if (!isPasswordCorrect) {
+    const error = new Error('비밀번호가 일치하지 않습니다')
+    error.statusCode = 400
+    throw error
+  }
+
+  if (loginInfo.email && isPasswordCorrect) {
+    const token = jwt.sign({ email: loginInfo.email }, SECRET_KEY)
+    return {
+      accessToken: token, id: loginInfo.id
+    };
+  }
+}
+
+module.exports = { signUp, checkDupMail, logIn }
