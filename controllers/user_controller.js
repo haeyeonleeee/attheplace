@@ -22,4 +22,15 @@ const checkDupMail = async (req, res) => {
   }
 }
 
-module.exports = { signUp, checkDupMail }
+const logIn = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    await userService.logIn(email, password)
+    res.status(200).json({ message: '로그인 완료' });
+  } catch (err) {
+    console.log(err);
+    res.status(err.statusCOde || 500).json({ message: err.message })
+  }
+}
+
+module.exports = { signUp, checkDupMail, logIn }

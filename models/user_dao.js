@@ -17,4 +17,13 @@ const getEmail = async (email) => {
   return user
 }
 
-module.exports = { createUser, getEmail }
+const getEmailPassword = async (email) => {
+  const [loginInfo] = await myDataSource.query(`
+  SELECT id, email, password
+  FROM users
+  WHERE email = ?
+  `, [email]);
+  return loginInfo
+};
+
+module.exports = { createUser, getEmail, getEmailPassword }
